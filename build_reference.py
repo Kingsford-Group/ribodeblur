@@ -109,11 +109,16 @@ def prepare_region_list(chrm_len, exon_list, padding):
     region_list = append_padding(chrm_len, exon_list, padding)
     return region_list
 
-def get_cds(region_list):
+def get_cds_start(region_list):
     """ get CDS start and end from region_list """
-    start = region_list[0].end - region_list[0].start
-    end = region_list[-1].start - region_list[0].start
-    return (start, end)
+    return region_list[0].end - region_list[0].start
+
+def get_cds_end(region_list):
+    """ get CDS start and end from region_list """
+    end = 0
+    for exon in region_list[:-1]:
+        end += exon.end - exon.start
+    return end
 
 def get_seq(seq_rec, start, end):
     """ return regions of seq from seq_rec """
@@ -139,6 +144,7 @@ def build_transcript_seq(seq_rec, exon_list):
 
 def build_transcriptome_rec(genome_seq, annotation, padding):
     """ build SeqRecord for transcripts """
+    import time
     seq_rec_list = []
     for chrm in annotation:
         for transcript in annotation[chrm]:
@@ -147,7 +153,8 @@ def build_transcriptome_rec(genome_seq, annotation, padding):
                                               annotation[chrm][transcript], 
                                               padding)
             seq = build_transcript_seq(genome_seq[chrm], region_list)
-            start, end = get_cds(region_list)
+            start = get_cds_start(region_list)
+            end = get_cds_end(region_list)
             description = "|CDS:{}-{}|length:{}".format(start, end, len(seq))
             seq_rec_list.append(Bio.SeqRecord.SeqRecord(seq, 
                                                         id=tid, 
