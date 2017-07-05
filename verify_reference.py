@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+verify fasta output from build_reference.py 
+with Ensembl's transcript fasta file,
+exit after spotting one different record
+"""
 import argparse
 import sys
 
