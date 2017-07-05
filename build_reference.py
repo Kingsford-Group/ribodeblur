@@ -11,6 +11,8 @@ import operator
 import BCBio.GFF
 import Bio.SeqIO
 import Bio.SeqRecord
+import Bio.Seq
+import Bio.Alphabet
 
 Exon = collections.namedtuple("Exon", ["start", "end", "strand", "phase", "phase_end", "rank"])
 
@@ -94,31 +96,14 @@ def append_padding(chrm_len, exon_list, padding):
     end = e.end + padding
     if end > chrm_len: end = chrm_len
     utr3 = Exon(e.end, end, e.strand, e.phase, e.phase_end, -1)
-    return [utr5] + exon_list + [utr3]
-
-def prepare_region_list(chrm_len, exon_list, padding):
-    """
-    reverse exon order if negative strand
-    add UTR retions to exon_list
-    """
-    strand = exon_list[0].strand
-    # reverse exon order for negative strand
-    if strand == -1:
-        exon_list = exon_list[::-1]
-    # include UTR padding
-    region_list = append_padding(chrm_len, exon_list, padding)
+    region_list = [ utr5 ]
+    # reverse exon order if negative strand
+    if utr5.strand == -1:
+        region_list.extend(exon_list[::-1])
+    else:
+        region_list.extend(exon_list)
+    region_list.append(utr3)
     return region_list
-
-def get_cds_start(region_list):
-    """ get CDS start and end from region_list """
-    return region_list[0].end - region_list[0].start
-
-def get_cds_end(region_list):
-    """ get CDS start and end from region_list """
-    end = 0
-    for exon in region_list[:-1]:
-        end += exon.end - exon.start
-    return end
 
 def get_seq(seq_rec, start, end):
     """ return regions of seq from seq_rec """
@@ -128,12 +113,9 @@ def connect_exons(seq_rec, exon_list):
     """
     return connected sequences from region list
     """
-    seq = None
-    for exon in exon_list:
-        exon_seq = get_seq(seq_rec, exon.start, exon.end)
-        if not seq: seq = exon_seq
-        else: seq += exon_seq
-    return seq
+    slist = [ str(get_seq(seq_rec, e.start, e.end)) for e in exon_list ]
+    seq = "".join(slist)
+    return Bio.Seq.Seq(seq, Bio.Alphabet.IUPAC.unambiguous_dna)
 
 def build_transcript_seq(seq_rec, exon_list):
     """ return connected seq with strand handling """
@@ -144,17 +126,18 @@ def build_transcript_seq(seq_rec, exon_list):
 
 def build_transcriptome_rec(genome_seq, annotation, padding):
     """ build SeqRecord for transcripts """
-    import time
     seq_rec_list = []
     for chrm in annotation:
         for transcript in annotation[chrm]:
             tid = transcript.lstrip("transcript:")
-            region_list = prepare_region_list(len(genome_seq[chrm]), 
-                                              annotation[chrm][transcript], 
-                                              padding)
+            region_list = append_padding(len(genome_seq[chrm]), 
+                                         annotation[chrm][transcript], 
+                                         padding)
             seq = build_transcript_seq(genome_seq[chrm], region_list)
-            start = get_cds_start(region_list)
-            end = get_cds_end(region_list)
+            # index of CDS start
+            start = region_list[0].end - region_list[0].start
+            # index of CDS end
+            end = len(seq) - region_list[-1].end + region_list[-1].start
             description = "|CDS:{}-{}|length:{}".format(start, end, len(seq))
             seq_rec_list.append(Bio.SeqRecord.SeqRecord(seq, 
                                                         id=tid, 
@@ -189,13 +172,13 @@ def main():
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
-    print("indexing genome fasta file...")
+    print("indexing genome fasta file...", file=sys.stderr)
     genomes = Bio.SeqIO.index(args.input_fa, "fasta")
-    print("parsing annotation gff...")
+    print("parsing annotation gff...", file=sys.stderr)
     exons = get_exons_from_gff(args.gff)
-    print("getting transcriptome records...")
+    print("getting transcriptome records...", file=sys.stderr)
     seq_recs = build_transcriptome_rec(genomes, exons, args.padding)
-    print("writing records to fasta...")
+    print("writing records to fasta...", file=sys.stderr)
     write_seq_to_fasta(seq_recs, args.output_fa)    
 
 if __name__ == "__main__": main()
