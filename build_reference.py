@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
 build CDS with UTR padding from Ensembl genome fasta and gff annotation
-prerequest python module: Biopython
 """
 import argparse
 import sys
@@ -30,13 +29,11 @@ def extract_parent(seq_feature):
     """ get parent (of exon feature) """
     tids =  seq_feature.qualifiers["Parent"]
     if len(tids) > 1:
-        print("WARNING: more than one parent for exon {}! {}".format(seq_feature.id, tids))
+        print("WARNING: more than one parent for exon {}! {}".format(seq_feature.id, tids), file=sys.stderr)
     return tids[0]
 
 def get_exon_list(seq_feature):
-    """
-    extract all exon children features of a seq feature
-    """
+    """ extract all exon children features of a seq feature """
     transcript = collections.defaultdict(list)
     # process queue for features
     feature_queue = collections.deque([seq_feature])
@@ -110,9 +107,7 @@ def get_seq(seq_rec, start, end):
     return seq_rec.seq[start:end]
 
 def connect_exons(seq_rec, exon_list):
-    """
-    return connected sequences from region list
-    """
+    """ return connected sequences from region list """
     slist = [ str(get_seq(seq_rec, e.start, e.end)) for e in exon_list ]
     seq = "".join(slist)
     return Bio.Seq.Seq(seq, Bio.Alphabet.IUPAC.unambiguous_dna)
@@ -151,11 +146,8 @@ def write_seq_to_fasta(seq_list, out_fa):
     ofile.close()
         
 def make_arg_parser():
-    """
-    command line arguments
-    """
-    parser = argparse.ArgumentParser(prog="build_reference.py", add_help=True, \
-                                     description="build coding region sequence fasta with utr padding from genome fasta and gff annotation")
+    """ command line arguments """
+    parser = argparse.ArgumentParser(prog="build_reference.py", add_help=True, description="build coding region sequence fasta with utr padding from genome fasta and gff annotation")
     parser.add_argument("-f", "--input_fa", required=True, help="genome FASTA file from Ensembl")
     parser.add_argument("-a", "--gff", required=True, help="genome gff3 annotations from Ensembl")
     parser.add_argument("-o", "--output_fa", required=True, help="output FASTA of transcriptome")
@@ -163,10 +155,8 @@ def make_arg_parser():
     return parser
 
 def main():
-    """
-    extract transcript sequences from genome fasta and gff annotations
-    """
-    print("preparing parameters...")
+    """ extract transcript sequences from genome fasta and gff annotations """
+    print("preparing parameters...", file=sys.stderr)
     parser = make_arg_parser()
     if len(sys.argv) == 1:
         parser.print_help()
