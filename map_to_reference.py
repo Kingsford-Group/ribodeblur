@@ -168,7 +168,7 @@ def make_arg_parser():
     return parser
 
 def main():
-    """ pipeline script to call STAR for alignment ribo-seq reads to the transcriptome """
+    """ pipeline script to call STAR for aligning ribo-seq reads to the transcriptome """
     parser = make_arg_parser()
     if len(sys.argv) == 1:
         parser.print_help()
