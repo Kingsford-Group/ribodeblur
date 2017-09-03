@@ -83,7 +83,7 @@ def build_star_idx(ref_fa, star_idx_dir, nproc, force=True):
         param_str = set_ref_params(ref_len, ref_cnt)
         cmd = contaminant_idx_cmd.substitute(ref_fa = ref_fa,
                                              ref_idx = idx_dir,
-                                             nproc = 30,
+                                             nproc = nproc,
                                              param_str = param_str)
         print(cmd, file=sys.stderr)
         # run command
