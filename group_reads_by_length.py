@@ -27,9 +27,9 @@ def get_read_len(read_rec):
     read_len = 0
     for op,l in read_rec.cigar:
         # splice: indicate novel splices, skip
-        if op == cop["N"]: return 0
+        if op == 3: return 0
         # only match/mismatch or deletion will change read_len
-        if op == cop["M"] or op == cop["D"]:
+        if op == 0 or op == 2:
             read_len += l
     return read_len
 
