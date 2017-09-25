@@ -73,4 +73,3 @@ def main():
     filter_high_cover_profile(args.input, args.cds_fa, args.cover_ratio, args.cnt_threshold, args.output)
 
 if __name__ == "__main__": main()
-# python high_cover_profile.py -i test.hist -f ~/data/ribodeblur/refs/Saccharomyces_cerevisiae.R64-1-1.transcript_100.fa -o high_coverage.hist
