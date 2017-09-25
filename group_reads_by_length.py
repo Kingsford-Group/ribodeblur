@@ -119,4 +119,4 @@ def main():
     write_rlen_hist(rlen_hist, args.ofname)
 
 if __name__ == "__main__": main()
-# python group_reads_by_length.py -b /home/hw1/data/ribodeblur/star_align/SRR1177157_transcript_Aligned.out.bam -o test.hist
+# python group_reads_by_length.py -b /home/hw1/data/ribodeblur/star_align/SRR1177157_transcript_Aligned.out.bam -o raw.hist
