@@ -15,7 +15,7 @@ def get_abundance(pobs):
     return { rlen: sum(p) for rlen, p in pobs.items() }
 
 def merge_profiles(plist):
-    return np.sum(plist.values(), axis=0)
+    return np.sum(list(plist.values()), axis=0)
 
 def initiate_ptrue(pobs):
     if 28 in pobs:
@@ -35,21 +35,26 @@ def estimate_pobs_single(vblur, k, ptrue):
     pobs_estimate = np.dot(A, vblur)
     return pobs_estimate
 
-def estimate_ctrue(ptrue, eps, cobs):
+def estimate_ctrue(ptrue_single, eps_single, cobs):
+    """ 
+    construct length-specific true profiles 
+    (cobs: total_cnts per len)
+    """
     ctrue = {}
-    rlen_list = list(set(eps.keys()) & set(cobs.keys()))
+    rlen_list = list(set(eps_single.keys()) & set(cobs.keys()))
     for rlen in rlen_list:
-        ptrue_rlen = ptrue - eps[rlen]
+        ptrue_rlen = ptrue_single - eps_single[rlen]
         # reset negatives
         ptrue_rlen[ptrue_rlen<0] = 0
         # re-normalization
         ptrue_rlen /= np.sum(ptrue_rlen)
-        ctrue_rlen = sum(cobs[rlen]) * ptrue_rlen
+        ctrue_rlen = cobs[rlen] * ptrue_rlen
         ctrue[rlen] = ctrue_rlen
     return ctrue
 
-def batch_build_ctrue(ptrue, eps, cobs):
-    return { tid: estimate_ctrue(ptrue[tid], eps[tid], cobs[tid]) for tid in ptrue }
+def batch_build_ctrue(ptrue, eps, tot_cnts):
+    """ construct length specific true profiles for all transcripts """
+    return { tid: estimate_ctrue(ptrue[tid], eps[tid], tot_cnts[tid]) for tid in ptrue }
 
 def compute_total_least_square(vblur, k, pobs, ptrue, eps, selected, train=True):
     """

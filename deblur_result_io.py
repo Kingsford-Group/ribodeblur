@@ -68,7 +68,7 @@ def read_essentials(fname):
         else:
             read_len, pc_str = line.rstrip("\n").split(": ")
             read_len = int(read_len)
-            prof = np.array(map(float, pc_str.split("\t")))
+            prof = np.array(list(map(float, pc_str.split("\t"))))
             if read_len == 0:
                 ptrue[tid] = prof
             else:

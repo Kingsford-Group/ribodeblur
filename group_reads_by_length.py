@@ -100,6 +100,11 @@ def write_rlen_hist(rlen_hist, ofname):
                 text.append("{}: {}".format(rlen, ", ".join(pos_cnt_list)))
     ofile.write("\n".join(text))
     ofile.close()
+
+def group_reads_by_length(ifname, ofname):
+    """ pipeline for grouping reads by length """
+    rlen_hist = bam_to_rlen_group(args.bam)
+    write_rlen_hist(rlen_hist, args.ofname)
     
 def make_arg_parser():
     """ command line arguments """
@@ -115,8 +120,7 @@ def main():
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
-    rlen_hist = bam_to_rlen_group(args.bam)
-    write_rlen_hist(rlen_hist, args.ofname)
+    group_reads_by_len_pipeline(args.bam, args.ofname)
 
 if __name__ == "__main__": main()
 # python group_reads_by_length.py -b /home/hw1/data/ribodeblur/star_align/SRR1177157_transcript_Aligned.out.bam -o raw.hist
