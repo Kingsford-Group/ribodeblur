@@ -59,8 +59,7 @@ def batch_Asite_recovery_parallel(tprofile, cds_range, utr5_offset, utr3_offset,
     print("\ntotal deblurred transcripts: {0}".format(len(ptrue)))
     return ptrue, eps
 
-def deblur_transcripts(hist_fn, cds_fa, vblur_fn, odir):
-    ensure_dir(odir)
+def deblur_transcripts(hist_fn, cds_fa, vblur_fn, eps_fname):
     print("get pre-computed blur vector")
     b = read_vblur(vblur_fn)
     vrlen_min, vrlen_max = get_rlen_range_from_vblur(b)
@@ -70,9 +69,7 @@ def deblur_transcripts(hist_fn, cds_fa, vblur_fn, odir):
     tprofile = get_transcript_profiles(tlist, cds_range, utr5_offset, utr3_offset)
     print("batch A-site recovery")
     ptrue, eps = batch_Asite_recovery_parallel(tprofile, cds_range, utr5_offset, utr3_offset, vrlen_min, vrlen_max, b, klist, converge_cutoff, nproc)
-    #ptrue, eps = batch_Asite_recovery(tprofile, cds_range, utr5_offset, utr3_offset, vrlen_min, vrlen_max, b, klist, converge_cutoff)
-    ofname = odir+get_file_core(hist_fn)+".eps"
-    write_essentials(ptrue, eps, ofname)
+    write_essentials(ptrue, eps, eps_fname)
 
 def make_arg_parser():
     """ command line arguments """
@@ -80,7 +77,7 @@ def make_arg_parser():
     parser.add_argument("-i", "--input", required=True, help="Input rlen_hist file with high-coverage transcripts")
     parser.add_argument("-f", "--cds_fa", required=True, help="Reference fasta of padded transcriptome")
     parser.add_argument("-v", "--vblur", required=True, help="Blur vector parameters for deblur process")
-    parser.add_argument("-o", "--output_dir", required = True, help="Output directoryto store blur vector")
+    parser.add_argument("-o", "--output", required = True, help="Output deblured profiles to file")
     return parser
 
 def main():
@@ -90,6 +87,6 @@ def main():
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
-    deblur_transcripts(args.input, args.cds_fa, args.vblur, args.output_dir)
+    deblur_transcripts(args.input, args.cds_fa, args.vblur, args.output)
 
 if __name__ == "__main__": main()

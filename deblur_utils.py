@@ -273,22 +273,6 @@ def deblur_eps(vblur, k, pobs, ptrue, selected, train=True):
     # filling up slack variables
     eps = np.zeros(len(ptrue))
     eps[true_start: true_end] = sol[0]
-    # obj_before = np.dot(eobs_filter, eobs_filter)
-    # res = np.dot(A_filter, sol[0]) - eobs_filter
-    # eps_obs = np.dot(res,res)
-    # eps_true = np.dot(eps,eps)
-    # obj_after = eps_obs + eps_true
-    # print "in deblur_eps: before: {0:.2e}, after: {1:.2e}".format(obj_before, obj_after)
-    # print "eps_obs: {0:.2e} eps_true: {1:.2e}".format(eps_obs, eps_true)
-    # # re-adjust invalid slacks to be valid
-    # negatives = ptrue - eps < 0
-    # eps[negatives] = ptrue[negatives]
-    # print "data points: total: {0} selected: {1} invalid: {2}".format(len(pobs), sum(selected), sum(negatives))
-    # res = np.dot(A_filter, eps[true_start: true_end]) - eobs_filter
-    # eps_obs = np.dot(res, res)
-    # eps_true = np.dot(eps, eps)
-    # obj_after = eps_obs + eps_true
-    # print "final obj: eps_obs: {0:.2e} eps_true: {1:.2e} total: {2:.2e}".format(eps_obs, eps_true, obj_after)
     return eps
 
 #=============================
@@ -330,7 +314,7 @@ def compute_tot_obj(ptrue, abd, pobs, klist, select, b, eps_rlen, train):
         obj_tot += abd[rlen] * eps_tot
     return obj_tot, obj_obs, obj_true
 
-def train_blur_vec(cobs, ptrue, abd, b, klist, low, percentile, converge_cutoff=1e-1, pos_list=None, estep=True, ofname=None):
+def train_blur_vec(cobs, ptrue, abd, b, klist, low, percentile, converge_cutoff=1e-1, pos_list=None, estep=True):
     """
     EM frame work on training vblur
     Max params: vblur, ptrue_eps 
@@ -390,7 +374,7 @@ def train_blur_vec(cobs, ptrue, abd, b, klist, low, percentile, converge_cutoff=
     print("final E-step obj: ", tot_list[-1])
     return b, ptrue, eps_rlen
 
-def train_vblur_from_meta_profiles(cobs, klist, low, percentile, converge_cutoff = 1e-1, estep=True, ofname=None):
+def train_vblur_from_meta_profiles(cobs, klist, low, percentile, converge_cutoff = 1e-1, estep=True):
     """wrapper function to train vblur on meta profiles"""
     abd = get_abundance(cobs)
     ptrue = initiate_ptrue(cobs)
@@ -406,7 +390,7 @@ def train_vblur_from_meta_profiles(cobs, klist, low, percentile, converge_cutoff
         ctrue = ptrue * abd[rlen]
         vblur = single_kernel_width(ctrue, cobs[rlen], k, threshold, pos_list, False)
         b[rlen] = vblur
-    b, ptrue, eps = train_blur_vec(cobs, ptrue, abd, b, klist, low, percentile, converge_cutoff, pos_list, estep, ofname)
+    b, ptrue, eps = train_blur_vec(cobs, ptrue, abd, b, klist, low, percentile, converge_cutoff, pos_list, estep)
     return b, ptrue, eps
 
 def validate_profile(vec):
@@ -455,8 +439,6 @@ def recover_true_profile(cobs, klist, b, low, percentile, converge_cutoff, ofnam
     i = 0
     while converge == False:
         i += 1
-        # sys.stdout.write("deblur testing EM iteration: {0}.\t\r".format(i))
-        # sys.stdout.flush()        
         eps_rlen = {}
         # M-step: paramter estimation
         for rlen in pobs:
@@ -466,10 +448,6 @@ def recover_true_profile(cobs, klist, b, low, percentile, converge_cutoff, ofnam
             # true signal deblur
             eps = deblur_eps(vblur, k, pobs[rlen], ptrue, selected, False)
             if eps is None: continue
-            # print "original: ",
-            # eps_tot, eps_obs, eps_true = compute_total_least_square(vblur, k, pobs[rlen], ptrue, np.zeros(len(ptrue)), selected, False)            
-            # print "ptrue step: ",
-            # eps_tot,eps_obs,eps_true = compute_total_least_square(vblur, k, pobs[rlen], ptrue, eps, selected, False)
             eps_rlen[rlen] = eps
         if len(eps_rlen) == 0:
             print("transcript too sparse")
@@ -480,7 +458,6 @@ def recover_true_profile(cobs, klist, b, low, percentile, converge_cutoff, ofnam
         for rlen in eps_rlen:
             ptrue_estimate = ptrue - eps_rlen[rlen]
             eps = ptrue_curr - ptrue_estimate
-            # eps_tot, eps_obs, eps_true = compute_total_least_square(b[rlen], klist[rlen], pobs[rlen], ptrue_curr, eps, select[rlen], False)
             # update slacks for true estimates (only change in E-step)
             eps_rlen[rlen] = eps
         ptrue = ptrue_curr
@@ -490,7 +467,6 @@ def recover_true_profile(cobs, klist, b, low, percentile, converge_cutoff, ofnam
             return None, None
         if (obs_list[-1] - obj_obs)/float(obs_list[-1]) < converge_cutoff:
             converge = True
-        # print "{0:.2e} {1:.2e}".format(obj_mstep, obj_tot)        
         # keep a record of the objective function from the M-step
         obs_list.append(obj_obs)
         true_list.append(obj_true)

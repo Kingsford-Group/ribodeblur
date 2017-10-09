@@ -10,6 +10,7 @@ step 5: combine length-specific profiles
 
 import os
 import sys
+import argparse
 import operator
 from group_reads_by_length import group_reads_by_length
 from high_cover_profile import filter_high_cover_profile
@@ -44,46 +45,89 @@ def construct_deblur_profiles(deblur_fname, hist_fname):
     ctrue_merge = { tid: merge_profiles(ctrue[tid]) for tid in ctrue }
     return ctrue_merge
 
-if __name__ == "__main__":
-    force = False
-    bam_fname = "/home/hw1/data/ribodeblur/star_align/SRR1177157_transcript_Aligned.out.bam"
-    cds_fa = "/home/hw1/data/ribodeblur/refs/Saccharomyces_cerevisiae.R64-1-1.transcript_100.fa"
-    odir = "/home/hw1/data/ribodeblur/deblur"
-    file_core = "by_fp"
-    raw_hist = "{}/{}_raw.hist".format(odir, file_core)
-    high_cov_hist = "{}/{}_hc.hist".format(odir, file_core)
-    vblur_fname = "{}/{}.vblur".format(odir, file_core)
-    eps_fname = "{}/{}.eps".format(odir, file_core)
-    profile_fname = "{}/{}.profile".format(odir, file_core)
+def write_profiles(profiles, profile_fname):
+    """ write merged profiles to file """
+    text = []
+    for tid in profiles:
+        prof_str = " ".join([ "{:.0f}".format(profiles[tid][i]) 
+                              for i in range(len(profiles[tid])) ])
+        text.append("{}: {}".format(tid, prof_str))
+    ofile = open(profile_fname, 'w')
+    ofile.write("\n".join(text))
+    ofile.close()
+
+def deblur_pipeline(bam_fname, cds_fa, oprefix, force):
+    """ full pipeline for deblur ribo profiles for a given sample """
+    # step 0: prepare input parameters
+    odir = os.path.dirname(oprefix)
+    if odir and not os.path.exists(odir): os.makedirs(odir)
+    if oprefix.endswith("/"): oprefix += "ribo"
+    raw_hist = "{}_raw.hist".format(oprefix)
+    high_cov_hist = "{}_hc.hist".format(oprefix)
+    vblur_fname = "{}.vblur".format(oprefix)
+    eps_fname = "{}.eps".format(oprefix)
+    profile_fname = "{}.profile".format(oprefix)
     cover_ratio = 0.5
     cnt_threshold = 0
-    
     # step 1: generate length-specific profiles
     if not os.path.exists(raw_hist) or force == True:
-        group_reads_by_len_pipe(bam_fname, raw_hist)
-    else:
-        print("length-specific profile exists, use cached", file=sys.stderr)
+        group_reads_by_length(bam_fname, raw_hist)
+        if not os.path.exists(raw_hist) or os.path.getsize(raw_hist) == 0:
+            print("FATAL: deblur_pipeline failed at group_reads_by_len!", file=sys.stderr)
+            print("abort program!", file=sys.stderr)
+            exit(1)
+    else: print("length-specific profile exists, use cached", file=sys.stderr)
     # step 2: filter high-coverage profiles
     if not os.path.exists(high_cov_hist) or force == True:
         filter_high_cover_profile(raw_hist, cds_fa, cover_ratio, cnt_threshold, high_cov_hist)
-    else:
-        print("high-coverage profile exists, use cached", file=sys.stderr)
+        if not os.path.exists(high_cov_hist) or os.path.getsize(high_cov_hist) == 0:
+            print("FATAL: deblur_pipeline failed at filter_high_cover_profile!", file=sys.stderr)
+            print("abort program!", file=sys.stderr)
+            exit(1)
+    else: print("high-coverage profile exists, use cached", file=sys.stderr)
     # step 3: train blur vector from meta profiles
     if not os.path.exists(vblur_fname) or force == True:
-        train_vblur_from_meta(high_cov_hist, cds_fa, odir)
-    else:
-        print("vblur file exists, use cached", file=sys.stderr)
+        train_vblur_from_meta(high_cov_hist, cds_fa, vblur_fname)
+        if not os.path.exists(vblur_fname) or os.path.getsize(vblur_fname) == 0:
+            print("FATAL: deblur_pipeline failed at train_vblur_from_meta!", file=sys.stderr)
+            print("abort program!", file=sys.stderr)
+            exit(1)
+    else: print("vblur file exists, use cached", file=sys.stderr)
     # step 4: deblur high-coverage profiles
     if not os.path.exists(eps_fname) or force == True:
-        deblur_transcripts(high_cov_hist, cds_fa, vblur_fname, odir)
-    else:
-        print("deblur file exits, use cached", file=sys.stderr)
+        deblur_transcripts(high_cov_hist, cds_fa, vblur_fname, eps_fname)
+        if not os.path.exists(eps_fname) or os.path.getsize(eps_fname) == 0:
+            print("FATAL: deblur_pipeline failed at deblur_transcripts!", file=sys.stderr)
+            print("abort program!", file=sys.stderr)
+            exit(1)
+    else: print("deblur file exits, use cached", file=sys.stderr)
     # step 5: combine length-specific profiles
     if not os.path.exists(profile_fname) or force == True:
         ctrue_merge = construct_deblur_profiles(eps_fname, high_cov_hist)
-        i = 0
-        for tid in ctrue_merge:
-            print(tid, ctrue_merge[tid][:10])
-            i += 1
-            if i > 10: break
-            
+        write_profiles(ctrue_merge, profile_fname)
+        if not os.path.exists(profile_fname) or os.path.getsize(profile_fname) == 0:
+            print("FATAL: deblur_pipeline failed at combine_profile!", file=sys.stderr)
+            print("abort program!", file=sys.stderr)
+            exit(1)
+    else: print("final results exists, nothing needs to be done", file=sys.stderr)
+
+def make_arg_parser():
+    """ command line arguments """
+    parser = argparse.ArgumentParser(prog="deblur_pipeline.py", add_help=True, description="pipeline to run deblur process given reference and read alignment")
+    parser.add_argument("-r", "--cds_fa", required=True, help="Reference fasta of padded transcriptome")
+    parser.add_argument("-b", "--bam", required=True, help="Alignment BAM file that maps reads to transcriptome")
+    parser.add_argument("-o", "--oprefix", required = True, help="Prefix of output files")
+    parser.add_argument("-f", "--force", action="store_true", default=False, help="force re-run of entire pipeline if provided")
+    return parser
+
+def main():
+    """ command line wrapper """
+    parser = make_arg_parser()
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+    args = parser.parse_args()
+    deblur_pipeline(args.bam, args.cds_fa, args.oprefix, args.force)
+
+if __name__ == "__main__": main()
+# python deblur_pipeline.py -r /home/hw1/data/ribodeblur/refs/Saccharomyces_cerevisiae.R64-1-1.transcript_100.fa -b /home/hw1/data/ribodeblur/star_align/SRR1177157_transcript_Aligned.out.bam -o /home/hw1/data/ribodeblur/deblur/by_fp    

@@ -4,9 +4,8 @@ import argparse
 import numpy as np
 from meta_profile import filter_transcript_by_length, create_rlen_meta_profile, get_cobs
 from deblur_utils import train_vblur_from_meta_profiles
-from deblur_result_io import ensure_dir, write_vblur
+from deblur_result_io import write_vblur
 from footprint_hist_parser import get_cds_range, parse_rlen_hist
-from map_to_reference import get_file_core
 from global_params import *
 
 def get_max_frame_percent(vec, percentile=95):
@@ -55,7 +54,7 @@ def get_vblur_rlen_range(mobs):
             break
     return vrlen_min, vrlen_max
 
-def meta_pipeline(tlist, cds_range, istart, istop, rlen_min, rlen_max, converge_cutoff, obj_pdf):
+def meta_pipeline(tlist, cds_range, istart, istop, rlen_min, rlen_max, converge_cutoff):
     """ train blur vector on meta profiles with different lengths """
     # train vblur on meta profile
     tid_select = filter_transcript_by_length(cds_range, istop)
@@ -64,23 +63,22 @@ def meta_pipeline(tlist, cds_range, istart, istop, rlen_min, rlen_max, converge_
     vrlen_min, vrlen_max = get_vblur_rlen_range(mobs)
     mobs_hc = { rlen:mobs[rlen] for rlen in range(vrlen_min, vrlen_max+1) } 
     estep = True
-    b, ptrue, eps = train_vblur_from_meta_profiles(mobs_hc, klist, low, percentile, converge_cutoff, estep, obj_pdf)
+    b, ptrue, eps = train_vblur_from_meta_profiles(mobs_hc, klist, low, percentile, converge_cutoff, estep)
     return b, ptrue, eps
 
-def train_vblur_from_meta(hist_fn, cds_fa, odir):
+def train_vblur_from_meta(hist_fn, cds_fa, vblur_fname):
     """ procedure pipeline """
-    ensure_dir(odir)
     cds_range = get_cds_range(cds_fa)
     tlist = parse_rlen_hist(hist_fn)
-    b, ptrue, eps = meta_pipeline(tlist, cds_range, utr5_offset, imax, rlen_min, rlen_max, converge_cutoff, odir+get_file_core(hist_fn)+"_train_vblur_trial.pdf")
-    write_vblur(b, odir+get_file_core(hist_fn)+".vblur")
+    b, ptrue, eps = meta_pipeline(tlist, cds_range, utr5_offset, imax, rlen_min, rlen_max, converge_cutoff)
+    write_vblur(b, vblur_fname)
 
 def make_arg_parser():
     """ command line arguments """
     parser = argparse.ArgumentParser(prog="train_vblur_from_meta", add_help=True, description="Train blur vector from length-specific meta profiles")
     parser.add_argument("-i", "--input", required=True, help="Input rlen_hist file with high-coverage transcripts")
     parser.add_argument("-f", "--cds_fa", required=True, help="Reference fasta of padded transcriptome")
-    parser.add_argument("-o", "--output_dir", required = True, help="Output directory to store blur vector")
+    parser.add_argument("-o", "--output", required = True, help="Output blur vector to file")
     return parser
 
 def main():
@@ -90,6 +88,6 @@ def main():
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
-    train_vblur_from_meta(args.input, args.cds_fa, args.output_dir)    
+    train_vblur_from_meta(args.input, args.cds_fa, args.output)
 
 if __name__ == "__main__": main()
