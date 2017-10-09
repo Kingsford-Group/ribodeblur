@@ -9,13 +9,13 @@ This is the package for our previous work appeared at RECOMB in 2016:
 __Hao Wang, Joel McManus and Carl Kingsford__. *Accurate recovery of ribosome position signals reveals slow translation of wobble-pairing codons in yeast*. In RECOMB 2016 and JCB 2016.
 
 ## Prerequisites
-`ribodeblur` is a python package based on `python 3`, and all of the prerequisites of `ribodeblur` are widely used python packages. They can be easily installed with [`easy_install`](http://peak.telecommunity.com/DevCenter/EasyInstall#using-easy-install),[`pip`](https://pip.pypa.io/en/stable/user_guide/) or [`conda`](https://conda.io/docs/user-guide/getting-started.html). 
+`ribodeblur` is a python package based on `python3`, and all of the prerequisites of `ribodeblur` are widely used python packages. They can be easily installed with [`easy_install`](http://peak.telecommunity.com/DevCenter/EasyInstall#using-easy-install),[`pip`](https://pip.pypa.io/en/stable/user_guide/) or [`conda`](https://conda.io/docs/user-guide/getting-started.html). 
 * python (3.6)
 * python packages: `numpy (1.13.0)`, `scipy (0.19.1)`, `bcbiogff (0.6.4)`, `biopython (1.68)`, and `pysam (0.11.2.2)`.
 * STAR (2.5.3a) for aligning ribo-seq reads to the transcriptome.
 
 ## Usage
-There are three major steps for running `ribodeblur`. First `ribodeblur` prepares a transcriptome `fasta` file that includes UTR regions for all included transcripts. Second, `ribodeblur` maps ribo-seq reads of a given sample to the transcriptome with STAR. Third, `ribodeblur` generates A-site profiles given the transcriptome reference and the read alignments. 
+There are three major steps for running `ribodeblur`. First `ribodeblur` prepares a transcriptome `fasta` file that includes UTR regions for all transcripts. Second, `ribodeblur` maps ribo-seq reads of a given sample to the transcriptome with STAR. Third, `ribodeblur` generates A-site profiles given the transcriptome reference and the read alignments. 
 
 ### Step 1: generate transcriptome fasta file
 To generate a transcriptome fasta file, run:
@@ -45,4 +45,16 @@ where `CONTAMINANT.FA` is the contaminant reference fasta (e.g. rRNA, tRNA, etc.
 
 The final output of this step is an alignment file ends with `_transcript_Aligned.out.bam` under directory `STAR_ALIGN_DIR`. 
 
+### Step 3: deblur ribosome profiles and output A-site profiles
+To generate A-site profiles, run:
+```
+python deblur_pipeline.py -r TRANSCRIPTOME.FA -b ALIGN.BAM -o OUTPUT_PREFIX
+```
+where `TRANSCRITPOME.FA` is the transcriptome reference generated from **Step 1**, `ALIGN.BAM` is the alignment file generated form **Step 2**, and `OUTPUT_PREFIX` is the prefix of the output for the A-site profile.
 
+The final otuput of this step is an A-site profile starts with `OUTPUT_PREFIX` and ends with `.profile`.
+It looks like this:
+<blockquote>
+YBR248C: 3 0 0 1 0 0 0 0 0 1 0 0 132 0 15 186 1 0 171 ...
+</blockquote>
+where each line starts with the transcript name, then the read count for each nucleotide location.

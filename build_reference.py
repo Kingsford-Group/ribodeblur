@@ -156,7 +156,6 @@ def make_arg_parser():
 
 def main():
     """ extract transcript sequences from genome fasta and gff annotations """
-    print("preparing parameters...", file=sys.stderr)
     parser = make_arg_parser()
     if len(sys.argv) == 1:
         parser.print_help()
