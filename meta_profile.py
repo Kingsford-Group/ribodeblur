@@ -3,15 +3,6 @@ import numpy as np
 import sys
 from footprint_hist_parser import *
 from global_params import *
-import matplotlib
-from matplotlib import rcParams
-rcParams['backend'] = 'Agg'
-rcParams['font.size'] = 12
-rcParams['xtick.major.size'] = 5
-rcParams['ytick.major.size'] = 5
-rcParams['pdf.fonttype'] = 42
-rcParams['ps.fonttype'] = 42
-import matplotlib.pyplot as plt
 
 #=============================
 # utils
@@ -148,83 +139,3 @@ def get_length_distribution(rlen2cnt, rlen_min, rlen_max):
                         if rlen >= rlen_min and rlen <= rlen_max }
     tot_cnt = float(sum(rlen2cnt_filter.values()))
     return { rlen: cnt/tot_cnt for rlen,cnt in rlen2cnt_filter.items() }
-
-#=============================
-# plot meta profile
-#=============================
-def plot_pos_hist(meta_hist, sframe, ibegin, iend, min_cnt, fn_prefix):
-    print("plotting pos hist...")
-    rlen_list = sorted(meta_hist.keys())
-    x_pos = np.arange(ibegin, iend+1)
-    figwidth = len(x_pos)/10.0*1.5
-    for rlen in rlen_list:
-        y_cnt = get_pos_hist(meta_hist[rlen], ibegin, iend)
-        if is_sparse(y_cnt, min_cnt): continue
-        fig = plt.figure(figsize=(figwidth,6))
-        ax = fig.add_subplot(1,1,1)
-        max_cnt = get_ylim(y_cnt)
-        ymax = max_cnt + 1
-        plt.bar(-rlen+16-0.4, ymax, width=0.8, color='k', edgecolor='white', alpha=0.4)
-        plt.bar(x_pos-0.4, y_cnt, width=0.8, color='k', edgecolor='white', alpha=0.4)
-        plt.xlabel("offset from start")
-        plt.ylabel("footprint count")
-        plt.xticks(range(-100, iend+1, 5))
-        plt.xlim((ibegin-1, iend+1))
-        plt.ylim((0.1, ymax))
-        plt.title("{0}\n{1}".format(rlen, sframe[rlen]), size=20)
-        plt.savefig("{0}_{1}_pos_hist.pdf".format(fn_prefix, rlen), bbox_inches="tight")
-        plt.close()
-
-def plot_meta_pos_hist(meta_hist, ibegin, iend, fn_prefix):
-    print("plotting meta pos hist...")
-    x_pos = np.arange(ibegin, iend+1)
-    y_cnt = np.array([0]*len(x_pos))
-    figwidth = len(x_pos)/10.0*1.5
-    for rlen in meta_hist:
-        y_cnt_rlen = get_pos_hist(meta_hist[rlen], ibegin, iend)
-        y_cnt += y_cnt_rlen
-    fig = plt.figure(figsize=(figwidth,6))        
-    ax = fig.add_subplot(1,1,1)
-    max_cnt = get_ylim(y_cnt)
-    ymax = max_cnt + 1
-    plt.bar(x_pos-0.4, y_cnt, width=0.8, color='b', edgecolor='white', alpha=0.5)
-    imax = np.argmax(y_cnt)
-    plt.xlabel("offset from start")
-    plt.ylabel("footprint count")
-    plt.xticks(range(-100, iend+1, 5))
-    plt.xlim((ibegin-1, iend+1))
-    plt.ylim((0.1, ymax))
-    plt.savefig("{0}_{1}_pos_hist.pdf".format(fn_prefix, "meta"), bbox_inches="tight")
-    plt.close()
-
-#=============================
-# main
-#=============================
-def plot_rlen_hist_pipe():
-    from deblur_result_io import ensure_dir, get_file_core
-    if len(sys.argv) != 4:
-        print("Usage: python meta_profile.py input_rlen.hist cds_range output_dir")
-        exit(1)
-    hist_fn = sys.argv[1]
-    cds_txt = sys.argv[2]
-    odir = sys.argv[3]
-    min_sample_cnt = 100
-    ensure_dir(odir)
-    cds_range = get_cds_range(cds_txt)
-    tid_select = filter_transcript_by_length(cds_range, imax)
-    tlist = parse_rlen_hist(hist_fn)
-    rlen2cnt = get_length_count(tlist)
-    rlen2portion = get_length_distribution(rlen2cnt, rlen_min, rlen_max)
-    tot_portion = 0
-    for rlen in sorted(rlen2portion.keys()):
-        print("{0}-mers: {1:.2%}".format(rlen, rlen2portion[rlen]))
-        tot_portion += rlen2portion[rlen]
-    print("total: {0:.2%}".format(tot_portion))
-    exit(1)
-    sframe = get_frame_str_from_tlist(tlist, cds_range)
-    meta_hist = create_rlen_meta_profile(tlist, cds_range, tid_select, utr5_offset, imax)
-    fn_prefix = odir+"/"+get_file_core(hist_fn)+"_start_{0}".format(imax)
-    plot_pos_hist(meta_hist, sframe, utr5_offset, imax, min_sample_cnt, fn_prefix)    
-    plot_meta_pos_hist(meta_hist, utr5_offset, imax, fn_prefix)
-
-if __name__ == "__main__": plot_rlen_hist_pipe()

@@ -9,37 +9,6 @@ from footprint_hist_parser import get_cds_range, parse_rlen_hist
 from map_to_reference import get_file_core
 from global_params import *
 
-
-import matplotlib
-from matplotlib import rcParams
-
-rcParams['backend'] = 'Agg'
-rcParams['font.size'] = 12
-rcParams['xtick.major.size'] = 5
-rcParams['ytick.major.size'] = 5
-rcParams['pdf.fonttype'] = 42
-rcParams['ps.fonttype'] = 42
-
-import matplotlib.pyplot as plt
-
-def plot_vblur(vblur, ofname=None):
-    """ plot blur vectors for different read lengths """
-    plot_cnt = len(vblur)
-    j = 1
-    fig = plt.figure(figsize=(10,13))
-    rlen_list = sorted(vblur.keys())
-    for rlen in rlen_list:
-        ax = fig.add_subplot(7,3,j)
-        plt.plot(vblur[rlen], 'm-o', markeredgecolor='none')
-        plt.title("{0}".format(rlen))
-        j += 1
-    plt.tight_layout()
-    if ofname !=None:
-        plt.savefig(ofname, bbox_inches='tight')
-        plt.close()
-    else:
-        plt.show()
-
 def get_max_frame_percent(vec, percentile=95):
     """ portion of reads in the most abundant frame """
     fsum = np.zeros(3)
@@ -84,11 +53,6 @@ def get_vblur_rlen_range(mobs):
         # print "{0} {1:.2%} {2:.0f}".format(rlen, max_frame_portion, min_frame_cnt)
         if min_frame_cnt >= lowest_frame_cnt and max_frame_portion >= lowest_frame_percent:
             break
-    # for rlen in xrange(rlen_min, rlen_max+1):
-    #     if rlen not in mobs: continue
-    #     min_frame_cnt = get_min_mean_frame_cnt(mobs[rlen],100)
-    #     max_frame_portion = get_max_frame_percent(mobs[rlen], 100)
-    #     print "read length: {0} min frame cnt: {1:.0f} frame skew: {2:.2%}".format(rlen, min_frame_cnt, max_frame_portion)
     return vrlen_min, vrlen_max
 
 def meta_pipeline(tlist, cds_range, istart, istop, rlen_min, rlen_max, converge_cutoff, obj_pdf):
@@ -109,7 +73,6 @@ def train_vblur_from_meta(hist_fn, cds_fa, odir):
     cds_range = get_cds_range(cds_fa)
     tlist = parse_rlen_hist(hist_fn)
     b, ptrue, eps = meta_pipeline(tlist, cds_range, utr5_offset, imax, rlen_min, rlen_max, converge_cutoff, odir+get_file_core(hist_fn)+"_train_vblur_trial.pdf")
-    plot_vblur(b, odir+get_file_core(hist_fn)+"_vblur_single.pdf")
     write_vblur(b, odir+get_file_core(hist_fn)+".vblur")
 
 def make_arg_parser():

@@ -123,37 +123,6 @@ def evaluate_correlation(true_vec, est_vec):
     print("all: pr {1:.2} sr {2:.2}".format(i, pearsonr, spearr))
     return pr_list
 
-def plot_profile(pobs, ptrue, pobs_estimate, ptrue_estimate, rlen=28, fn=None):
-    fig_width = len(ptrue)/10.0*1.5
-    fig = plt.figure(figsize=(10,12))
-    ax = fig.add_subplot(4,1,1)
-    in_range = lambda i, start, end: (i>=start) and (i<end)
-    color = [ 'b' if pobs_estimate[i]!=0  else 'k' for i in range(len(pobs_estimate)) ]
-    plt.bar(np.arange(len(pobs))-0.4, pobs, width=0.8, color=color, edgecolor='white', alpha=0.3)
-    plt.title("read length: {0} \nobserved counts".format(rlen), fontsize=12)
-    plt.xlim((-1, len(pobs)+1))
-    max_cnt = get_ylim(pobs) + 1
-    plt.ylim((0, max_cnt))
-    ax = fig.add_subplot(4,1,2)
-    plt.bar(np.arange(len(pobs_estimate))-0.4, pobs_estimate, width=0.8, color='b', edgecolor='white', alpha=0.3)
-    plt.title("estimated observed counts", fontsize=12)
-    plt.xlim((-1, len(pobs)+1))
-    ax = fig.add_subplot(4,1,3)
-    color = [ 'b' if ptrue[i]!=ptrue_estimate[i] else 'k' for i in range(len(ptrue)) ]
-    plt.bar(np.arange(len(ptrue))-0.4, ptrue, width=0.8, color=color, edgecolor='white', alpha=0.3)
-    plt.title("true counts", fontsize=12)
-    plt.xlim((-1,len(ptrue)+1))
-    ax = fig.add_subplot(4,1,4)
-    plt.bar(np.arange(len(ptrue))-0.4, ptrue_estimate, width=0.8, color=color, edgecolor='white', alpha=0.3)
-    plt.title("estimated true counts", fontsize=12)
-    plt.xlim((-1,len(ptrue)+1))
-    plt.tight_layout()
-    if fn == None:
-        plt.show()
-    else:
-        plt.savefig(fn, bbox_inches='tight')
-        plt.close()
-    
 #=============================
 # blur kernel estimation
 #=============================
@@ -336,20 +305,6 @@ def expected_ptrue(ptrue_pre, eps, weight):
     ptrue /= sum(ptrue)
     return ptrue
 
-def plot_obj(tot_list, obs_list, true_list, ofname):
-    if ofname==None:
-        return False
-    plt.figure()
-    plt.plot(tot_list, 'r-*', markersize = 20, markeredgecolor = 'none')
-    plt.plot(obs_list,'b-o', markersize = 12, markeredgecolor='none')
-    plt.plot(true_list, 'c-D', markersize = 10, markeredgecolor='none')
-    plt.legend(['eps total', 'eps observed', 'eps true'], loc='upper right', frameon=False, ncol=3)
-    plt.xlim((-0.2, len(tot_list)-1))
-    plt.xlabel('iteration')
-    plt.ylabel('least square')
-    plt.savefig(ofname, bbox_inches='tight')
-    plt.close()
-
 def select_single_rlen_loci(cobs_rlen, vblur, k, percentile, low, pos_list, train):
     threshold = np.percentile(cobs_rlen, percentile) if percentile<100 else np.inf
     blur_start, blur_end = get_blur_range(len(vblur), k, len(cobs_rlen), train)
@@ -404,25 +359,13 @@ def train_blur_vec(cobs, ptrue, abd, b, klist, low, percentile, converge_cutoff=
             vblur = b[rlen]
             k = klist[rlen]
             selected = select[rlen]
-            # print "rlen: {0} default k: {1} data points: {2}".format(rlen, klist[rlen], sum(selected))
             # parameter 1: slack vars in ptrue
             # true signal deblur
             eps = deblur_eps(vblur, k, pobs[rlen], ptrue, selected, True)
-            # print "original: ",
-            # eps_tot, eps_obs, eps_true = compute_total_least_square(vblur, k, pobs[rlen], ptrue, np.zeros(len(ptrue)), selected, True)            
-            # print "ptrue step: ",
-            # eps_tot,eps_obs,eps_true = compute_total_least_square(vblur, k, pobs[rlen], ptrue, eps, selected, True)
             ctrue_estimated = abd[rlen]*(ptrue - eps)
             # parameter 2: blur kernel re-estimation
-            # print "vblur step: ",
-            # print "before:",
-            # eps_tot,eps_obs,eps_true = compute_total_least_square(vblur, k, cobs[rlen], ctrue_estimated, np.zeros(len(ctrue_estimated)), selected, True)
             threshold = np.percentile(pobs[rlen]*abd[rlen], percentile)
             vblur = single_kernel_width(ctrue_estimated, pobs[rlen]*abd[rlen], k, threshold, pos_list)
-            # print "after:",
-            # eps_tot,eps_obs,eps_true = compute_total_least_square(vblur,k,cobs[rlen], ctrue_estimated, np.zeros(len(ctrue_estimated)), selected, True)
-            # print "final m-step:",
-            # eps_tot,eps_obs,eps_true = compute_total_least_square(vblur, k, pobs[rlen], ptrue, eps, selected, True)
             converge_cnt += check_convergence(b[rlen], vblur, converge_cutoff)
             if len(vblur) != len(b[rlen]):
                 select[rlen] = select_single_rlen_loci(cobs[rlen], vblur, k, percentile, low, pos_list, True)
@@ -430,28 +373,20 @@ def train_blur_vec(cobs, ptrue, abd, b, klist, low, percentile, converge_cutoff=
             b[rlen] = vblur
             # update slacks for true estimates
             eps_rlen[rlen] = eps
-        # keep a record of m-step obj
-        #obj_mstep,_,_ = compute_tot_obj(ptrue, abd, pobs, klist, select, b, eps_rlen, True)
         # E-step: ptrue re-estimation
         if estep == True:
-            # print "E-step:"
             ptrue_curr = expected_ptrue(ptrue, eps_rlen, abd)
             for rlen in cobs:
-                # print "rlen: {0}".format(rlen),
                 ptrue_estimate = ptrue - eps_rlen[rlen]
                 eps = ptrue_curr - ptrue_estimate
-                # eps_tot, eps_obs, eps_true = compute_total_least_square(b[rlen], klist[rlen], pobs[rlen], ptrue_curr, eps, select[rlen], True)
-                # update slacks for true estimates (only change in E-step)
                 eps_rlen[rlen] = eps
             ptrue = ptrue_curr
             obj_tot, obj_obs, obj_true = compute_tot_obj(ptrue, abd, pobs, klist, select, b, eps_rlen, True)
-            # print "{0:.2e} {1:.2e}".format(obj_mstep, obj_tot)
         # keep a record of the objective function from the M-step
         obs_list.append(obj_obs)
         true_list.append(obj_true)
         tot_list.append(obj_tot)
     sys.stdout.write("\n")
-    plot_obj(tot_list, obs_list, true_list, ofname)    
     print("final E-step obj: ", tot_list[-1])
     return b, ptrue, eps_rlen
 
@@ -563,7 +498,4 @@ def recover_true_profile(cobs, klist, b, low, percentile, converge_cutoff, ofnam
         if i > 50:
             print("fail to converge")
             return ptrue, eps_rlen
-    # sys.stdout.write("\n")
-    plot_obj(tot_list, obs_list, true_list, ofname)    
-    # print "final M-step obj: ", tot_list[-1]
     return ptrue, eps_rlen
