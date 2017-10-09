@@ -103,8 +103,8 @@ def write_rlen_hist(rlen_hist, ofname):
 
 def group_reads_by_length(ifname, ofname):
     """ pipeline for grouping reads by length """
-    rlen_hist = bam_to_rlen_group(args.bam)
-    write_rlen_hist(rlen_hist, args.ofname)
+    rlen_hist = bam_to_rlen_group(ifname)
+    write_rlen_hist(rlen_hist, ofname)
     
 def make_arg_parser():
     """ command line arguments """
@@ -120,7 +120,7 @@ def main():
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
-    group_reads_by_len_pipeline(args.bam, args.ofname)
+    group_reads_by_length(args.bam, args.ofname)
 
 if __name__ == "__main__": main()
 # python group_reads_by_length.py -b /home/hw1/data/ribodeblur/star_align/SRR1177157_transcript_Aligned.out.bam -o raw.hist
