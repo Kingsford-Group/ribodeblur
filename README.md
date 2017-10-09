@@ -22,7 +22,7 @@ To generate a transcriptome fasta file, run:
 ```
 python build_reference.py -f GENOME.FA -a GENOME.GFF -o TRANSCRIPTOME.FA
 ```
-where `GENOME.FA` is the genome fasta file and `GENOME.GFF` is the annotation file, both should be downloaded from (Ensembl)[https://www.ensembl.org/info/data/ftp/index.html]. `TRANSCRIPTOME.FA` is the transcriptome reference the script generated. 
+where `GENOME.FA` is the genome fasta file and `GENOME.GFF` is the annotation file, both should be downloaded from [Ensembl[(https://www.ensembl.org/info/data/ftp/index.html). `TRANSCRIPTOME.FA` is the transcriptome reference the script generated. 
 
 parameter `-p` specifiies the UTR padding regions added to each transcript, default is 100.
 
