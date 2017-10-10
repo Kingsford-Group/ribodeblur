@@ -29,7 +29,7 @@ export PATH="$HOME/miniconda/bin:$PATH"
 ```
 conda env create -f ribodeblur.yml
 ```
-where `ribodeblur.yml` can be found in [here](https://github.com/Kingsford-Group/ribodeblur/blob/master/ribodeblur.yml)
+Here [`ribodeblur.yml`](https://github.com/Kingsford-Group/ribodeblur/blob/master/ribodeblur.yml) is the conda enviroment yaml file provided with the package. 
 * Step 4: activate conda environment
 ```
 source activate ribodeblur
