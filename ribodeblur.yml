@@ -1,0 +1,13 @@
+name: ribodeblur
+channels:
+- bioconda
+- defaults
+dependencies:
+- python=3.6.1=2
+- numpy=1.13.0=py36_0
+- scipy=0.19.1=np113py36_0
+- bcbiogff=0.6.4=py36_0
+- biopython=1.68=np113py36_0
+- pysam=0.11.2.2=py36_0
+- sra-tools=2.8.1=0
+- star=2.5.3a=0
