@@ -68,7 +68,7 @@ python map_to_reference.py -c CONTAMINANT.FA -t TRANCRITPOME.FA -r RIBOSEQ.FQ -i
 ```
 where `CONTAMINANT.FA` is the contaminant reference fasta (e.g. rRNA, tRNA, etc.), `TRANSCRIPTOME.FA` is the transcriptome reference generated from **Step 1**, `RIBOSEQ.FQ` is the ribo-seq raw reads (in fasta/fastq format, also support `.gz`), `STAR_IDX_DIR` is the directory to store STAR index, and `STAR_ALIGN_DIR` is the directory to store the alignment results (in `BAM` format).
 
-###### Optional parameters:
+##### Optional parameters:
 * `-p/--nproc`: number of threads to run STAR (default=30)
 * `a/--adapter`: adapter sequence to trim off by STAR (default=`CTGTAGGCACCATCAAT`)
 * `-f/--force`: force re-run of STAR alignment.
