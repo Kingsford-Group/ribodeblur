@@ -14,6 +14,27 @@ __Hao Wang, Joel McManus and Carl Kingsford__. *Accurate recovery of ribosome po
 * python packages: `numpy (1.13.0)`, `scipy (0.19.1)`, `bcbiogff (0.6.4)`, `biopython (1.68)`, and `pysam (0.11.2.2)`.
 * STAR (2.5.3a) for aligning ribo-seq reads to the transcriptome.
 
+## Set up prerequisites with conda
+[`Conda`](https://conda.io/docs/) is an environment and package management system. If `conda` is not installed in your system, follow [these](https://conda.io/docs/user-guide/install/index.html) instructions. Here lists key commands to setup `conda` on a linux machine.
+* Step 1: download `miniconda`:
+```
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
+```
+* Step 2: install `miniconda`:
+```
+bash ~/miniconda.sh -b -p $HOME/miniconda
+export PATH="$HOME/miniconda/bin:$PATH"
+```
+* Step 3: create virtual environment with all prerequisites installed:
+```
+conda env create -f ribodeblur.yml
+```
+where `ribodeblur.yml` can be found in [here](https://github.com/Kingsford-Group/ribodeblur/blob/master/ribodeblur.yml)
+* Step 4: activate conda environment
+```
+source activate ribodeblur
+```
+
 ## Usage
 There are three major steps for running `ribodeblur`. First `ribodeblur` prepares a transcriptome `fasta` file that includes UTR regions for all transcripts. Second, `ribodeblur` maps ribo-seq reads of a given sample to the transcriptome with STAR. Third, `ribodeblur` generates A-site profiles given the transcriptome reference and the read alignments. 
 
