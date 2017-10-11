@@ -7,7 +7,7 @@ riboseq_link="ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/S
 
 mkdir -p ${work_dir}
 pushd ${work_dir}
-wget -P ${work_dir} -N ${riboseq_link}
+curl -O ${riboseq_link}
 riboseq_sra=`basename ${riboseq_link}`
 fastq-dump ${work_dir}/${riboseq_sra} --gzip
 popd
