@@ -61,9 +61,11 @@ Here the CDS range provided in the header is important. `ribodeblur` relies on t
 
 To align ribo-seq reads to the transcriptome, run:
 ```
-python map_to_reference.py -c CONTAMINANT.FA -t TRANCRITPOME.FA -r RIBOSEQ.FQ -id STAR_IDX_DIR -ad STAR_ALIGN_DIR
+python map_to_reference.py -c CONTAMINANT.FA -t TRANCRITPOME.FA -r RIBOSEQ.FQ -id STAR_IDX_DIR -ad STAR_ALIGN_DIR -p NTHREAD
 ```
-where `CONTAMINANT.FA` is the contaminant reference fasta (e.g. rRNA, tRNA, etc.), `TRANSCRIPTOME.FA` is the transcriptome reference generated from **Step 1**, `RIBOSEQ.FQ` is the ribo-seq raw reads (in fasta/fastq format, also support `.gz`), `STAR_IDX_DIR` is the directory to store STAR index, and `STAR_ALIGN_DIR` is the directory to store the alignment results (in `BAM` format).
+where `CONTAMINANT.FA` is the contaminant reference fasta (e.g. rRNA, tRNA, etc.), `TRANSCRIPTOME.FA` is the transcriptome reference generated from **Step 1**, `RIBOSEQ.FQ` is the ribo-seq raw reads (in fasta/fastq format, also support `.gz`), `STAR_IDX_DIR` is the directory to store STAR index, `STAR_ALIGN_DIR` is the directory to store the alignment results (in `BAM` format), and `NTHREAD` is the number of threads STAR can use.
+
+**note**: `NTHREAD` should not exceed the number of CPUs of the computer `ribodeblur` is running on. 
 
 ##### Optional parameters:
 * `-p/--nproc`: number of threads to run STAR (default=30)
