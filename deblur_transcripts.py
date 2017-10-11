@@ -2,6 +2,7 @@
 import sys
 import argparse
 import collections
+import multiprocessing
 from multiprocessing import Pool
 import numpy as np
 from meta_profile import *
@@ -9,6 +10,11 @@ from deblur_utils import *
 from deblur_result_io import *
 from global_params import *
 from map_to_reference import get_file_core
+
+def get_default_core_count(usage_percent=0.5):
+    tot_cnt = multiprocessing.cpu_count()
+    use_cnt = tot_cnt * usage_percent
+    return int(np.ceil(use_cnt))
 
 def batch_Asite_recovery(tprofile, cds_range, utr5_offset, utr3_offset, rlen_min, rlen_max, blur_vec, klist, converge_cutoff):
     ptrue = {}
@@ -67,7 +73,8 @@ def deblur_transcripts(hist_fn, cds_fa, vblur_fn, eps_fname):
     tlist = parse_rlen_hist(hist_fn)
     # build profile for each transcript per read length
     tprofile = get_transcript_profiles(tlist, cds_range, utr5_offset, utr3_offset)
-    print("batch A-site recovery")
+    nproc = get_default_core_count()
+    print("batch A-site recovery on {} cores".format(nproc))
     ptrue, eps = batch_Asite_recovery_parallel(tprofile, cds_range, utr5_offset, utr3_offset, vrlen_min, vrlen_max, b, klist, converge_cutoff, nproc)
     write_essentials(ptrue, eps, eps_fname)
 
