@@ -12,6 +12,7 @@ import os
 import sys
 import argparse
 import operator
+from global_params import cover_ratio, cnt_threshold
 from group_reads_by_length import group_reads_by_length
 from high_cover_profile import filter_high_cover_profile
 from train_vblur_from_meta import train_vblur_from_meta
@@ -48,7 +49,7 @@ def construct_deblur_profiles(deblur_fname, hist_fname):
 def write_profiles(profiles, profile_fname):
     """ write merged profiles to file """
     text = []
-    for tid in profiles:
+    for tid in sorted(profiles.keys()):
         prof_str = " ".join([ "{:.0f}".format(profiles[tid][i]) 
                               for i in range(len(profiles[tid])) ])
         text.append("{}: {}".format(tid, prof_str))
@@ -67,8 +68,6 @@ def deblur_pipeline(bam_fname, cds_fa, oprefix, force):
     vblur_fname = "{}.vblur".format(oprefix)
     eps_fname = "{}.eps".format(oprefix)
     profile_fname = "{}.profile".format(oprefix)
-    cover_ratio = 0.5
-    cnt_threshold = 0
     # step 1: generate length-specific profiles
     if not os.path.exists(raw_hist) or force == True:
         group_reads_by_length(bam_fname, raw_hist)
