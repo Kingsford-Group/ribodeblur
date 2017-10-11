@@ -88,7 +88,7 @@ It looks like this:
 <blockquote>
 YBR248C: 3 0 0 1 0 0 0 0 0 1 0 0 132 0 15 186 1 0 171 ...
 </blockquote>
-Each line starts with the transcript name followed by the read count for each nucleotide location.
+Each line starts with the transcript name followed by the read count for each nucleotide location within the coding region.
 
 ## Test case
 `ribodeblur` requires the tested ribo-seq data with deep coverage. Here provides a real-world example from Albert _et al._
