@@ -9,28 +9,25 @@ This is the package for our previous work appeared at RECOMB in 2016:
 __Hao Wang, Joel McManus and Carl Kingsford__. *Accurate recovery of ribosome position signals reveals slow translation of wobble-pairing codons in yeast*. In RECOMB 2016 and JCB 2016.
 
 ## Prerequisites
-`ribodeblur` is a python package based on `python3`, and all prerequisites are widely used python packages. They can be easily installed with [`easy_install`](http://peak.telecommunity.com/DevCenter/EasyInstall#using-easy-install),[`pip`](https://pip.pypa.io/en/stable/user_guide/) or [`conda`](https://conda.io/docs/user-guide/getting-started.html). 
+`ribodeblur` is a python package based on `python3`, and all prerequisites (except for STAR) are widely used python packages. They can be easily installed with [`pip`](https://pip.pypa.io/en/stable/user_guide/) or [`conda`](https://conda.io/docs/user-guide/getting-started.html). 
 * python (3.6)
 * python packages: `numpy (1.13.0)`, `scipy (0.19.1)`, `bcbiogff (0.6.4)`, `biopython (1.68)`, and `pysam (0.11.2.2)`.
 * STAR (2.5.3a) for aligning ribo-seq reads to the transcriptome.
 
 ## Set up prerequisites with conda
 [`Conda`](https://conda.io/docs/) is an environment and package management system. If `conda` is not installed in your system, follow [these](https://conda.io/docs/user-guide/install/index.html) instructions. Here lists key commands to setup `conda` on a linux machine:
-* Step 1: download `miniconda`:
+* download and install `miniconda`:
 ```
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
-```
-* Step 2: install `miniconda`:
-```
 bash ~/miniconda.sh -b -p $HOME/miniconda
 export PATH="$HOME/miniconda/bin:$PATH"
 ```
-* Step 3: create virtual environment with all prerequisites installed:
+* create virtual environment with all prerequisites installed:
 ```
 conda env create -f ribodeblur.yml
 ```
 Here [`ribodeblur.yml`](https://github.com/Kingsford-Group/ribodeblur/blob/master/ribodeblur.yml) is the conda enviroment yaml file provided with the package. 
-* Step 4: activate conda environment
+* activate conda environment:
 ```
 source activate ribodeblur
 ```
@@ -76,6 +73,8 @@ where `CONTAMINANT.FA` is the contaminant reference fasta (e.g. rRNA, tRNA, etc.
 The final output of this step is an alignment file ends with `_transcript_Aligned.out.bam` under directory `STAR_ALIGN_DIR`. 
 
 ### Step 3: deblur ribosome profiles and output A-site profiles
+The final step of `ribodeblur` is the _deblur_ step, where the read alignments are processed and grouped by read length for each transcript, and only profiles with high coverage (>50% non-zero loci) are kept. Then for each read length, a _blur vector_ is learned from a meta-profile combining all transcripts, and each transcript profile are _deblurred_ independently. Lastly, the deblurred profiles from different read length are merged together to get a final ribosome A-site profile.
+
 To generate A-site profiles, run:
 ```
 python deblur_pipeline.py -r TRANSCRIPTOME.FA -b ALIGN.BAM -o OUTPUT_PREFIX
@@ -87,4 +86,13 @@ It looks like this:
 <blockquote>
 YBR248C: 3 0 0 1 0 0 0 0 0 1 0 0 132 0 15 186 1 0 171 ...
 </blockquote>
-where each line starts with the transcript name, then the read count for each nucleotide location.
+Each line starts with the transcript name followed by the read count for each nucleotide location.
+
+## Test case
+`ribodeblur` requires the tested ribo-seq data with deep coverage. Here provides a real-world example from Albert _et al._
+
+To download the yeast genome and non-coding reference (as contaminant reference), run script `download_refs.sh`. This automatically downloads the reference sequences from Ensembl to directory `$HOME/data/ribodeblur/refs`.
+
+To download the ribo-seq data, run script `download_ribobseq.sh`. This downloads the test-case ribo-seq data to directory `$HOME/data/ribodeblur/data`.
+
+To run the `ribodeblur` pipeline on the test set, use script `run_ribodeblur.sh`. This runs `ribodeblur` on the test set and outputs the A-site profile to `$Home/data/ribodeblur/deblur/by_fp.profile`.
