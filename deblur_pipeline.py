@@ -12,14 +12,14 @@ import os
 import sys
 import argparse
 import operator
-from global_params import cover_ratio, cnt_threshold
+from global_params import *
 from group_reads_by_length import group_reads_by_length
 from high_cover_profile import filter_high_cover_profile
 from train_vblur_from_meta import train_vblur_from_meta
 from deblur_transcripts import deblur_transcripts
 from deblur_utils import batch_build_ctrue, merge_profiles
 from deblur_result_io import read_essentials
-from footprint_hist_parser import parse_rlen_hist
+from footprint_hist_parser import parse_rlen_hist, get_cds_range
 
 def get_tot_cnt(prof):
     """ count total reads (input: [(pos, cnt)] """
@@ -45,6 +45,16 @@ def construct_deblur_profiles(deblur_fname, hist_fname):
     ctrue = batch_build_ctrue(ptrue, eps, tot_cnts)
     ctrue_merge = { tid: merge_profiles(ctrue[tid]) for tid in ctrue }
     return ctrue_merge
+
+def batch_build_Aprof(prof_dic, cds_range, utr5_offset, asite_offset):
+    """ trim deblurred profiles to only include coding regions """
+    aprof = {}
+    for tid, prof in prof_dic.items():
+        cds_start, cds_end = cds_range[tid]
+        istart = utr5_offset - asite_offset
+        iend = istart + ( cds_end - cds_start )
+        aprof[tid] = prof[istart: iend]
+    return aprof
 
 def write_profiles(profiles, profile_fname):
     """ write merged profiles to file """
@@ -103,7 +113,9 @@ def deblur_pipeline(bam_fname, cds_fa, oprefix, force):
     # step 5: combine length-specific profiles
     if not os.path.exists(profile_fname) or force == True:
         ctrue_merge = construct_deblur_profiles(eps_fname, high_cov_hist)
-        write_profiles(ctrue_merge, profile_fname)
+        cds_range = get_cds_range(cds_fa)
+        aprof = batch_build_Aprof(ctrue_merge, cds_range, -utr5_offset, asite_offset) 
+        write_profiles(aprof, profile_fname)
         if not os.path.exists(profile_fname) or os.path.getsize(profile_fname) == 0:
             print("FATAL: deblur_pipeline failed at combine_profile!", file=sys.stderr)
             print("abort program!", file=sys.stderr)
