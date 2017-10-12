@@ -86,12 +86,12 @@ where `TRANSCRITPOME.FA` is the transcriptome reference generated from **Step 1*
 The final otuput of this step is an A-site profile starts with `OUTPUT_PREFIX` and ends with `.profile`.
 It looks like this:
 <blockquote>
-YBR248C: 3 0 0 1 0 0 0 0 0 1 0 0 132 0 15 186 1 0 171 ...
+YAL003W: 21 17 1 11426 42 1 9 1 7 229 1 0 202 308 66 1545 0 38 83 3 1 ...
 </blockquote>
 Each line starts with the transcript name followed by the read count for each nucleotide location within the coding region.
 
 ## Test case
-`ribodeblur` requires the tested ribo-seq data with deep coverage. Here provides a real-world example from Albert _et al._
+`ribodeblur` requires the ribo-seq data with deep coverage. Here provides a real-world example from Albert _et al._
 
 To download the yeast genome and non-coding reference (as contaminant reference), run script `download_refs.sh`. This automatically downloads the reference sequences from Ensembl to directory `$HOME/data/ribodeblur/refs`.
 
