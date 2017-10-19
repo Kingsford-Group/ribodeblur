@@ -18,31 +18,16 @@ from high_cover_profile import filter_high_cover_profile
 from train_vblur_from_meta import train_vblur_from_meta
 from deblur_transcripts import deblur_transcripts
 from deblur_utils import batch_build_ctrue, merge_profiles
-from deblur_result_io import read_essentials
-from footprint_hist_parser import parse_rlen_hist, get_cds_range
+from deblur_result_io import read_essentials, build_cobs_with_shifts
+from footprint_hist_parser import parse_rlen_hist, get_cds_range, get_transcript_profiles
 
-def get_tot_cnt(prof):
-    """ count total reads (input: [(pos, cnt)] """
-    return sum(map(operator.itemgetter(1), prof))
-    
-def get_rlen_tot_cnt(tprof):
-    """ count total reads per length (input: {rlen: prof}) """
-    return { rlen: get_tot_cnt(tprof[rlen]) for rlen in tprof }
-
-def get_tot_cnt_from_tlist(tlist):
-    """ convert raw rlen hist parser to total read count """
-    return { t["tid"] : get_rlen_tot_cnt(t["prof"]) for rid,t in tlist.items() }
-
-def count_reads_per_len(hist_fname):
-    """ count total number of reads per read length per transcript """
-    tlist = parse_rlen_hist(hist_fname)
-    return get_tot_cnt_from_tlist(tlist)
-    
-def construct_deblur_profiles(deblur_fname, hist_fname):
+def construct_deblur_profiles(deblur_fname, hist_fname, cds_range):
     """ construct deblurred profiles from deblur results """
     ptrue, eps = read_essentials(deblur_fname)
-    tot_cnts = count_reads_per_len(hist_fname)
-    ctrue = batch_build_ctrue(ptrue, eps, tot_cnts)
+    tlist = parse_rlen_hist(hist_fname)
+    tprofile = get_transcript_profiles(tlist, cds_range, utr5_offset, utr3_offset)
+    cobs_shift = build_cobs_with_shifts(tprofile, cds_range, utr5_offset, utr3_offset, klist)
+    ctrue = batch_build_ctrue(ptrue, eps, cobs_shift)
     ctrue_merge = { tid: merge_profiles(ctrue[tid]) for tid in ctrue }
     return ctrue_merge
 
@@ -112,8 +97,8 @@ def deblur_pipeline(bam_fname, cds_fa, oprefix, force):
     else: print("deblur file exits, use cached", file=sys.stderr)
     # step 5: combine length-specific profiles
     if not os.path.exists(profile_fname) or force == True:
-        ctrue_merge = construct_deblur_profiles(eps_fname, high_cov_hist)
         cds_range = get_cds_range(cds_fa)
+        ctrue_merge = construct_deblur_profiles(eps_fname, high_cov_hist, cds_range)
         aprof = batch_build_Aprof(ctrue_merge, cds_range, -utr5_offset, asite_offset) 
         write_profiles(aprof, profile_fname)
         if not os.path.exists(profile_fname) or os.path.getsize(profile_fname) == 0:
