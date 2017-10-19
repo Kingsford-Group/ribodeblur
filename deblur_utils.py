@@ -36,10 +36,7 @@ def estimate_pobs_single(vblur, k, ptrue):
     return pobs_estimate
 
 def estimate_ctrue(ptrue_single, eps_single, cobs):
-    """ 
-    construct length-specific true profiles 
-    (cobs: total_cnts per len)
-    """
+    """ construct length-specific true profiles """
     ctrue = {}
     rlen_list = list(set(eps_single.keys()) & set(cobs.keys()))
     for rlen in rlen_list:
@@ -48,7 +45,7 @@ def estimate_ctrue(ptrue_single, eps_single, cobs):
         ptrue_rlen[ptrue_rlen<0] = 0
         # re-normalization
         ptrue_rlen /= np.sum(ptrue_rlen)
-        ctrue_rlen = cobs[rlen] * ptrue_rlen
+        ctrue_rlen = sum(cobs[rlen]) * ptrue_rlen
         ctrue[rlen] = ctrue_rlen
     return ctrue
 
