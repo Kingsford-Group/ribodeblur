@@ -61,6 +61,7 @@ def meta_pipeline(tlist, cds_range, istart, istop, rlen_min, rlen_max, converge_
     pos_hist = create_rlen_meta_profile(tlist, cds_range, tid_select, istart, istop)
     mobs = get_cobs(pos_hist, rlen_min, rlen_max, 0, istop)    
     vrlen_min, vrlen_max = get_vblur_rlen_range(mobs)
+    print("read lengths with enough signal strength: {}-{}".format(vrlen_min, vrlen_max))
     mobs_hc = { rlen:mobs[rlen] for rlen in range(vrlen_min, vrlen_max+1) } 
     estep = True
     b, ptrue, eps = train_vblur_from_meta_profiles(mobs_hc, klist, low, percentile, converge_cutoff, estep)
