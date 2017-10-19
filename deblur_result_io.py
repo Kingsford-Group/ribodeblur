@@ -134,7 +134,9 @@ def build_cobs_with_shifts(tprofile, cds_range, utr5_offset, utr3_offset, rlen_m
     i = 0
     for tid, prof in tprofile.items():
         start, end = cds_range[tid]
-        cobs[tid] = build_cobs_per_transcript_with_shifts(prof, utr5_offset, (end-start)+utr3_offset, rlen_min, rlen_max, klist)
+        cobs_current = build_cobs_per_transcript_with_shifts(prof, utr5_offset, (end-start)+utr3_offset, rlen_min, rlen_max, klist)
+        if len(cobs_current) != 0:
+            cobs[tid] = cobs_current
         i += 1
         sys.stdout.write("processed transcript {0}.\t\r".format(i))
         sys.stdout.flush()
