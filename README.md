@@ -88,7 +88,9 @@ It looks like this:
 <blockquote>
 YAL003W: 21 17 1 11426 42 1 9 1 7 229 1 0 202 308 66 1545 0 38 83 3 1 ...
 </blockquote>
-Each line starts with the transcript name followed by the read count for each nucleotide location within the coding region.
+Each line starts with the transcript name followed by the read count for each nucleotide location within the coding region. The read count vector is the sum of all read-length-specific profiles after deblur.
+
+If `(no deblur)` is marked after the transcript name, it means that all read-lenth-specific profiles for that transcript is too sparse to deblur, therefore only offset shifts are performed.
 
 ## Test case
 `ribodeblur` requires the ribo-seq data with deep coverage. Here provides a real-world example from Albert _et al._
