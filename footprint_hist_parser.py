@@ -74,7 +74,7 @@ def get_transcript_profiles(tlist, cds_range, ibegin, iend):
     """
     print("create transcript profiles")
     tprofile = collections.OrderedDict()
-    for rid in tlist:
+    for idx, rid in enumerate(tlist.keys()):
         tid = tlist[rid]['tid']
         start, end = cds_range[tid]
         tlen = end-start
@@ -85,7 +85,7 @@ def get_transcript_profiles(tlist, cds_range, ibegin, iend):
                 tprofile.setdefault(tid,{})
                 tprofile[tid].setdefault(rlen, [])
                 tprofile[tid][rlen].append((i,cnt))
-        sys.stdout.write("processed transcript {0}.\t\r".format(rid))
+        sys.stdout.write("processed transcript {0}.\t\r".format(idx))
         sys.stdout.flush()
     sys.stdout.write("\n")
     return tprofile

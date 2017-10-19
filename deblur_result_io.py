@@ -121,19 +121,19 @@ def build_cobs_per_rlen_with_shifts(pos_list, start, end, offset):
         profile[idx_adj] = cnt
     return profile
 
-def build_cobs_per_transcript_with_shifts(clist, start, end, rlen_min, rlen_max, klist):
+def build_cobs_per_transcript_with_shifts(clist, start, end, klist):
     cobst = {}
     for rlen, pos_list in clist.items():
-        if rlen < rlen_min or rlen > rlen_max: continue
         cobst[rlen] = build_cobs_per_rlen_with_shifts(pos_list, start, end, klist[rlen])
     return cobst
 
-def build_cobs_with_shifts(tprofile, cds_range, utr5_offset, utr3_offset, rlen_min, rlen_max, klist):
+def build_cobs_with_shifts(tprofile, cds_range, utr5_offset, utr3_offset, klist):
+    print("build profiles with shifts")
     cobs = {}
     i = 0
     for tid, prof in tprofile.items():
         start, end = cds_range[tid]
-        cobs[tid] = build_cobs_per_transcript_with_shifts(prof, utr5_offset, (end-start)+utr3_offset, rlen_min, rlen_max, klist)
+        cobs[tid] = build_cobs_per_transcript_with_shifts(prof, utr5_offset, (end-start)+utr3_offset, klist)
         i += 1
         sys.stdout.write("processed transcript {0}.\t\r".format(i))
         sys.stdout.flush()
