@@ -21,26 +21,52 @@ from deblur_utils import get_rlen_range_from_vblur, batch_build_ctrue, merge_pro
 from deblur_result_io import read_essentials, read_vblur, build_cobs_with_shifts
 from footprint_hist_parser import parse_rlen_hist, get_cds_range, get_transcript_profiles
 
+def merge_sparse_profiles(ctrue, cobs):
+    """ merge sparse profiles in cobs into ctrue """
+    cmix = {}
+    for tid in cobs:
+        if tid not in ctrue:
+            tid_new = tid + " (no deblur)"
+            cmix[tid_new] = cobs[tid]
+        else:
+            cmix[tid] = {}
+            for rlen in cobs[tid]:
+                if rlen in ctrue[tid]: 
+                    cmix[tid][rlen] = ctrue[tid][rlen]
+                else: 
+                    cmix[tid][rlen] = cobs[tid][rlen]
+    return cmix
+                    
 def construct_deblur_profiles(deblur_fname, vblur_fname, hist_fname, cds_range):
     """ construct deblurred profiles from deblur results """
+    ptrue, eps = read_essentials(deblur_fname)
     b = read_vblur(vblur_fname)
     vrlen_min, vrlen_max = get_rlen_range_from_vblur(b)
-    ptrue, eps = read_essentials(deblur_fname)
     tlist = parse_rlen_hist(hist_fname)
     tprofile = get_transcript_profiles(tlist, cds_range, utr5_offset, utr3_offset)
     cobs_shift = build_cobs_with_shifts(tprofile, cds_range, utr5_offset, utr3_offset, vrlen_min, vrlen_max, klist)
     ctrue = batch_build_ctrue(ptrue, eps, cobs_shift)
-    ctrue_merge = { tid: merge_profiles(ctrue[tid]) for tid in ctrue }
+    cmix = merge_sparse_profiles(ctrue, cobs_shift)
+    ctrue_merge = { tid: merge_profiles(cmix[tid]) for tid in cmix }
+    print("total transcripts with footprints in coding regions:", len(ctrue_merge))
     return ctrue_merge
 
 def batch_build_Aprof(prof_dic, cds_range, utr5_offset, asite_offset):
     """ trim deblurred profiles to only include coding regions """
     aprof = {}
     for tid, prof in prof_dic.items():
-        cds_start, cds_end = cds_range[tid]
+        idx = tid.find(" (no deblur)")
+        if idx != -1: 
+            tid_name = tid[:idx]
+        else:
+            tid_name = tid
+        cds_start, cds_end = cds_range[tid_name]
         istart = utr5_offset - asite_offset
         iend = istart + ( cds_end - cds_start )
-        aprof[tid] = prof[istart: iend]
+        try: aprof[tid] = prof[istart: iend]
+        except IndexError:
+            print(tid, prof)
+            exit(1)
     return aprof
 
 def write_profiles(profiles, profile_fname):
@@ -100,7 +126,7 @@ def deblur_pipeline(bam_fname, cds_fa, oprefix, force):
     # step 5: combine length-specific profiles
     if not os.path.exists(profile_fname) or force == True:
         cds_range = get_cds_range(cds_fa)
-        ctrue_merge = construct_deblur_profiles(eps_fname, vblur_fname, high_cov_hist, cds_range)
+        ctrue_merge = construct_deblur_profiles(eps_fname, vblur_fname, raw_hist, cds_range)
         aprof = batch_build_Aprof(ctrue_merge, cds_range, -utr5_offset, asite_offset) 
         write_profiles(aprof, profile_fname)
         if not os.path.exists(profile_fname) or os.path.getsize(profile_fname) == 0:
